@@ -1,40 +1,59 @@
-import json
+
+
+from channels.exceptions import DenyConnection
 from channels.generic.websocket import AsyncWebsocketConsumer
+from rest_framework.utils import json
+
+from chats.models import User
+from surveys.models import Survey
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = f'chat_{self.room_name}'
+        self.survey_id = self.scope['url_route']['kwargs']['survey_id']
+        self.room_group_name = f'chat_{self.survey_id}'
 
-        # Присоединение к группе
+        # Проверка авторизации
+        if not self.scope['user'].is_authenticated:
+            raise DenyConnection("Unauthorized")
+
+        # Присоединяемся к группе
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
         await self.accept()
 
-    async def disconnect(self, close_code):
-        # Удаление из группы
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
-
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data['message']
+        try:
+            text_data_json = json.loads(text_data)
+            message = text_data_json['message']
+            user_id = text_data_json['user_id']
 
-        # Отправка сообщения группе
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message
-            }
-        )
+            # Проверяем существование пользователя и опроса
+            user = await User.objects.aget(id=user_id)
+            survey = await Survey.objects.aget(id=self.survey_id)
 
-    async def chat_message(self, event):
-        message = event['message']
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
+            # Сохраняем сообщение
+            await ChatMessage.objects.acreate(
+                survey=survey,
+                user=user,
+                message=message,
+            )
+
+            # Отправляем сообщение в группу
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'user_id': user.id,
+                    'username': user.username,
+                }
+            )
+        except User.DoesNotExist:
+            await self.send(json.dumps({"error": "User does not exist"}))
+        except Survey.DoesNotExist:
+            await self.send(json.dumps({"error": "Survey does not exist"}))
+        except Exception as e:
+            await self.send(json.dumps({"error": str(e)}))

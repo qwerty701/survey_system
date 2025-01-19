@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'surveys',
     
     'rest_framework',
+    'rest_framework.authtoken',
     'drf_yasg',
     'django_filters',
     'rest_framework_simplejwt',
@@ -81,8 +82,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'survey_api.wsgi.application'
 
-ASGI_APPLICATION = "survey_system.asgi.application"
+ASGI_APPLICATION = "survey_api.asgi.application"
 
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -113,10 +120,27 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    ),
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {'type': 'apiKey'},
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    }
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'Europe/Moscow'
 
@@ -147,7 +171,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=999),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
     'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),

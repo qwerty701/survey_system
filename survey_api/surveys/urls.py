@@ -1,9 +1,26 @@
-# polls/urls.py
+# surveys/urls.py
 
-from django.urls import path
-from .views import SubmitResponseView, ExportResponsesView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    CategoryViewSet,
+    SurveyViewSet,
+    QuestionViewSet,
+    AnswerViewSet,
+    SubmitResponseView,
+    ExportResponsesView,
+    UserResponseViewSet,
+)
+
+router = DefaultRouter()
+router.register(r'categories', CategoryViewSet)
+router.register(r'surveys', SurveyViewSet)
+router.register(r'questions', QuestionViewSet)
+router.register(r'answers', AnswerViewSet)
+router.register(r'user-responses', UserResponseViewSet)
 
 urlpatterns = [
-    path('submit-response/', SubmitResponseView.as_view(), name='submit-response'),
-    path('export-responses/', ExportResponsesView.as_view(), name='export-responses'),
+    path('', include(router.urls)),
+    path('submit-response', SubmitResponseView.as_view(), name='user-response'),
+    path('<int:survey_id>/export/', ExportResponsesView.as_view(), name='export_responses'),
 ]
