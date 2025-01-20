@@ -29,7 +29,7 @@ class Category(models.Model):
 class Survey(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_survey')
     title = models.CharField(max_length=64)
-    authors = models.ManyToManyField(User, related_name='authored_surveys')
+    authors = models.ForeignKey(User, on_delete=models.CASCADE ,related_name='authored_surveys')
     time_start = models.DateTimeField(auto_now_add=True)
     time_end = models.DateTimeField(verbose_name="Дата и время окончания вопроса")
     active = models.BooleanField(default=True)
@@ -63,14 +63,14 @@ class Survey(models.Model):
             raise PermissionDenied("Этот пользователь уже является автором.")
 
     def __str__(self):
-        return f'Опрос от {self.author}, название - {self.title}'
+        return f'Опрос от {self.authors}, название - {self.title}'
 
 @receiver(post_save, sender=Survey)
 def create_chat_for_survey(sender, instance, created, **kwargs):
     if created:
         ChatMessage.objects.create(
             survey=instance,
-            user=instance.author,
+            user=instance.authors,
             message="Чат для этого опроса создан!"
         )
 
@@ -80,11 +80,11 @@ def create_chat_and_notify(sender, instance, created, **kwargs):
     if created:
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"notifications_{instance.author.id}",
+            f"notifications_{instance.authors.id}",
             {
                 'type': 'notify_survey_creation',
                 'survey_title': instance.title,
-                'user_id': instance.author.id,
+                'user_id': instance.authors.id,
             }
         )
 
@@ -107,17 +107,21 @@ class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answer_options')
     text = models.CharField(max_length=255)
     votes = models.PositiveIntegerField(default=0)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_answer')
+    user_voted = models.ManyToManyField(User, blank=True, related_name='voted_answers')  # Учет пользователей
 
-    def increment_votes(self):
-        self.votes += 1
-        self.save()
+    def increment_votes(self, user):
+        if user not in self.user_voted.all():
+            self.votes += 1
+            self.save()
+            self.user_voted.add(user)
+            self.save()
+        else:
+            raise ValidationError("Вы уже голосовали за этот вариант.")
 
     def save(self, *args, **kwargs):
         if self.question.type != 'choice':
             raise ValidationError("Ответы могут быть созданы только для вопросов типа 'выбор из вариантов'.")
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return f'{self.text}, Голоса - {self.votes}'

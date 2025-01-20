@@ -12,14 +12,14 @@ def send_notification_on_survey_creation(sender, instance, created, **kwargs):
     if created:
         message = f'Создан новый опрос: {instance.title}'
         notification_type = 'survey_created'
-        send_notification(instance.author, message, notification_type)
+        send_notification(instance.authors, message, notification_type)
 
 @receiver(post_save, sender=Survey)
 def send_notification_on_survey_end(sender, instance, **kwargs):
     if not instance.active and instance.time_end and now() > instance.time_end:
         message = f'Опрос "{instance.title}" завершен.'
         notification_type = 'survey_ended'
-        send_notification(instance.author, message, notification_type)
+        send_notification(instance.authors, message, notification_type)
 
 def send_notification(user, message, notification_type):
     # Создаем уведомление в базе данных

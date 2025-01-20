@@ -19,4 +19,3 @@ class User(AbstractUser):
         related_name='custom_user_set',
         related_query_name='user',
     )
-    surveys_create = models.ManyToManyField('surveys.Survey', related_name='created_by_users', blank=True)

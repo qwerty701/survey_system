@@ -38,5 +38,6 @@ urlpatterns = [
     path('api/v1/surveys/', include('surveys.urls')),
     path('api/v1/user-profile/', include('user_profile.urls')),
     path('api/v1/chat/', include('chats.urls')),
+    path('api/v1/user/', include('users.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 ]

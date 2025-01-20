@@ -10,6 +10,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500)
     birth_date = models.DateField(null=True, blank=True)
+    surveys_create = models.ManyToManyField('surveys.Survey', related_name='created_by_users', blank=True, null=True)
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

@@ -1,5 +1,6 @@
 from django.utils.timezone import now
 from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,7 +29,7 @@ class SurveyViewSet(viewsets.ModelViewSet):
     search_fields = ['title']
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(authors=self.request.user)
 
 
 class QuestionViewSet(viewsets.ModelViewSet):
@@ -44,36 +45,67 @@ class AnswerViewSet(viewsets.ModelViewSet):
 class SubmitResponseView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = UserResponseSerializer(data=request.data)
-        if serializer.is_valid():
-            survey = serializer.validated_data['survey']
-            if not survey.active:
-                return Response(
-                    {"error": "Опрос не активен."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        survey_id = kwargs.get('survey_id')
+        data = request.data
 
-            if survey.time_end and now() > survey.time_end:
-                return Response(
-                    {"error": "Опрос завершен."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        try:
+            question = Question.objects.get(id=data.get('question'), survey_id=survey_id)
+        except Question.DoesNotExist:
+            return Response({'error': 'Вопрос не найден'}, status=status.HTTP_404_NOT_FOUND)
 
+        if question.type == 'choice':
+            answer_id = data.get('answer')
             try:
-                user_response = serializer.save(user=request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                return Response(
-                    {"error": f"Ошибка сохранения ответа: {str(e)}"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                answer = Answer.objects.get(id=answer_id, question=question)
+            except Answer.DoesNotExist:
+                return Response({'error': 'Ответ не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Увеличение голосов
+            try:
+                answer.increment_votes(user)  # Увеличиваем голоса и добавляем пользователя
+            except ValidationError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Создаем запись об ответе
+            response, created = UserResponse.objects.get_or_create(
+                user=user,
+                survey_id=survey_id,
+                question=question,
+                answer=answer
+            )
+
+            if not created:
+                return Response({'error': 'Вы уже ответили на этот вопрос.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'message': 'Ответ сохранен успешно'}, status=status.HTTP_200_OK)
+
+        elif question.type == 'text':
+            text_response = data.get('text_response')
+            if not text_response:
+                return Response({'error': 'Необходимо указать текстовый ответ'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Создаем текстовый ответ
+            response, created = UserResponse.objects.get_or_create(
+                user=user,
+                survey_id=survey_id,
+                question=question,
+                defaults={'text_response': text_response}
+            )
+
+            if not created:
+                return Response({'error': 'Вы уже ответили на этот вопрос.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'message': 'Текстовый ответ сохранен успешно'}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({'error': 'Неподдерживаемый тип вопроса'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ExportResponsesView(APIView):
     def get(self, request, *args, **kwargs):
-        format = request.query_params.get('format', 'csv')
+        format = request.query_params.get('format', 'xlsx')
         survey_id = kwargs.get('survey_id')
 
         responses = UserResponse.objects.filter(survey_id=survey_id).values(
@@ -84,6 +116,10 @@ class ExportResponsesView(APIView):
             'text_response',
             'responsed_at'
         )
+
+        for response in responses:
+            if 'responsed_at' in response and response['responsed_at']:
+                response['responsed_at'] = response['responsed_at'].replace(tzinfo=None)
 
         df = pd.DataFrame(responses)
 
