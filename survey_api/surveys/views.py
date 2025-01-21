@@ -1,14 +1,13 @@
-from django.utils.timezone import now
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status, filters, viewsets
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import *
-from .utils import has_user_completed_survey
+from .permissions import IsAuthor
 
 from .models import Survey, Question, Answer, UserResponse
 
@@ -61,14 +60,11 @@ class SubmitResponseView(APIView):
                 answer = Answer.objects.get(id=answer_id, question=question)
             except Answer.DoesNotExist:
                 return Response({'error': 'Ответ не найден'}, status=status.HTTP_404_NOT_FOUND)
-
-            # Увеличение голосов
             try:
-                answer.increment_votes(user)  # Увеличиваем голоса и добавляем пользователя
+                answer.increment_votes(user)
             except ValidationError as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Создаем запись об ответе
             response, created = UserResponse.objects.get_or_create(
                 user=user,
                 survey_id=survey_id,
@@ -86,7 +82,6 @@ class SubmitResponseView(APIView):
             if not text_response:
                 return Response({'error': 'Необходимо указать текстовый ответ'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Создаем текстовый ответ
             response, created = UserResponse.objects.get_or_create(
                 user=user,
                 survey_id=survey_id,
@@ -104,8 +99,10 @@ class SubmitResponseView(APIView):
 
 
 class ExportResponsesView(APIView):
+    permission_classes = [IsAuthor]
+
     def get(self, request, *args, **kwargs):
-        format = request.query_params.get('format', 'xlsx')
+        format = request.query_params.get('format', 'csv')
         survey_id = kwargs.get('survey_id')
 
         responses = UserResponse.objects.filter(survey_id=survey_id).values(

@@ -1,5 +1,3 @@
-# surveys/urls.py
-
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
@@ -21,6 +19,6 @@ router.register(r'user-responses', UserResponseViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('submit-response', SubmitResponseView.as_view(), name='user-response'),
+    path('<int:survey_id>/submit-response/', SubmitResponseView.as_view(), name='submit_response'),
     path('<int:survey_id>/export/', ExportResponsesView.as_view(), name='export_responses'),
 ]

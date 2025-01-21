@@ -1,7 +1,7 @@
-# notifications/signals.py
-
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.timezone import now
+
 from surveys.models import Survey
 from notifications.models import Notification
 from channels.layers import get_channel_layer
@@ -22,10 +22,9 @@ def send_notification_on_survey_end(sender, instance, **kwargs):
         send_notification(instance.authors, message, notification_type)
 
 def send_notification(user, message, notification_type):
-    # Создаем уведомление в базе данных
     Notification.objects.create(user=user, message=message, notification_type=notification_type)
 
-    # Отправляем уведомление через WebSocket
+
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'notifications_{user.id}',

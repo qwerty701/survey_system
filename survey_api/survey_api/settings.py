@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'channels',
 ]
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -85,9 +86,12 @@ WSGI_APPLICATION = 'survey_api.wsgi.application'
 ASGI_APPLICATION = "survey_api.asgi.application"
 
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+DEFAULT_CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 # Database
@@ -136,7 +140,7 @@ SWAGGER_SETTINGS = {
         }
     }
 }
-
+AUTH_USER_MODEL = 'users.User'
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -178,7 +182,7 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
 }
 
-AUTH_USER_MODEL = 'users.User'
+
 AUTH_PROFILE_MODULE = 'user_profile.Profile'
 
 CHANNEL_LAYERS = {

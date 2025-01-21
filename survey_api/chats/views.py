@@ -1,13 +1,13 @@
-from rest_framework import viewsets
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 
-class ChatMessageViewSet(viewsets.ModelViewSet):
-    queryset = ChatMessage.objects.all()
-    serializer_class = ChatMessageSerializer
+class ChatMessagesView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        survey_id = self.request.query_params.get('survey_id')
-        if survey_id:
-            return ChatMessage.objects.filter(survey_id=survey_id)
-        return super().get_queryset()
+    def get(self, request, survey_id):
+        messages = ChatMessage.objects.filter(survey_id=survey_id).order_by("timestamp")
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)

@@ -4,14 +4,13 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError, PermissionDenied
-import logging
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from chats.models import ChatMessage
+from notifications.models import Notification
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
 
 
 class Category(models.Model):
@@ -25,7 +24,6 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
 
-
 class Survey(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_survey')
     title = models.CharField(max_length=64)
@@ -34,6 +32,7 @@ class Survey(models.Model):
     time_end = models.DateTimeField(verbose_name="Дата и время окончания вопроса")
     active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
+
 
     def has_user_taken_survey(self, user):
         return UserResponse.objects.filter(user=user, survey=self).exists()
@@ -51,10 +50,12 @@ class Survey(models.Model):
 
     def save(self, *args, **kwargs):
         self.clean()
+
         if self.time_end and now() > self.time_end:
             self.active = False
 
         super().save(*args, **kwargs)
+
 
     def add_author(self, user):
         if user not in self.authors.all():
@@ -74,19 +75,9 @@ def create_chat_for_survey(sender, instance, created, **kwargs):
             message="Чат для этого опроса создан!"
         )
 
+channel_layer = get_channel_layer()
 
-@receiver(post_save, sender=Survey)
-def create_chat_and_notify(sender, instance, created, **kwargs):
-    if created:
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"notifications_{instance.authors.id}",
-            {
-                'type': 'notify_survey_creation',
-                'survey_title': instance.title,
-                'user_id': instance.authors.id,
-            }
-        )
+
 
 class Question(models.Model):
     TYPE_CHOICES = [
@@ -144,11 +135,12 @@ class UserResponse(models.Model):
         if self.question.type == 'choice' and not self.answer:
             raise ValidationError("Выбор ответа обязателен для вопросов типа 'выбор из вариантов'.")
 
+        if self.question.is_required and not (self.answer or self.text_response):
+            raise ValidationError("Это обязателный вопрос!")
+
         if self.answer and self.answer.question != self.question:
             raise ValidationError("Ответ не соответствует вопросу.")
 
-        if UserResponse.objects.filter(user=self.user, survey=self.survey).exists():
-            raise ValidationError("Вы уже проходили этот опрос.")
 
         if UserResponse.objects.filter(user=self.user, question=self.question).exists():
             raise ValidationError("Вы уже ответили на этот вопрос.")

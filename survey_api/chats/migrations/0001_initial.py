@@ -12,11 +12,11 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Profile',
+            name='ChatMessage',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('bio', models.TextField(max_length=500)),
-                ('birth_date', models.DateField(blank=True, null=True)),
+                ('message', models.TextField()),
+                ('timestamp', models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]
