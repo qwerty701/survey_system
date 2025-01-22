@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.signals import post_save
@@ -7,6 +8,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from channels.layers import get_channel_layer
 
 from apps.chats.models import ChatRoom, Message
+from apps.notifications.models import Notification
 
 User = get_user_model()
 
@@ -76,6 +78,30 @@ def create_chat_for_survey(sender, instance, created, **kwargs):
             chatroom=chatroom,
             sender=instance.authors,
             content='Hello World!'
+        )
+
+@receiver(post_save, sender=Survey)
+def send_notification_on_survey_creation(sender, instance, created, **kwargs):
+    if created:
+        # Создаем уведомление в базе данных
+        notification = Notification.objects.create(
+            user=instance.authors,
+            message=f"Опрос '{instance.title}' успешно создан!",
+            notification_type='survey_created'
+        )
+
+        # Отправляем уведомление через WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_{instance.authors.id}",  # Группа пользователя
+            {
+                "type": "send_notification",  # Метод в Consumer
+                "notification": {
+                    "type": "survey_created",
+                    "message": notification.message,
+                    "created_at": notification.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                }
+            }
         )
 
 channel_layer = get_channel_layer()

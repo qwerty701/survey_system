@@ -1,6 +1,10 @@
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+from .models import ChatRoom, Message
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -33,9 +37,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = data['message']
             sender_id = data['sender_id']
 
+            # Получаем объект ChatRoom
             chatroom = await self.get_chatroom()
             if chatroom:
+                # Сохраняем сообщение в базе данных
                 await self.save_message(chatroom, sender_id, message)
+
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -59,3 +66,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
         except Exception as e:
             print(f"Error during message send: {e}")
+
+    async def get_chatroom(self):
+        """
+        Получает объект ChatRoom по survey_id.
+        """
+        try:
+            chatroom = await ChatRoom.objects.aget(survey_id=self.survey_id)
+            return chatroom
+        except ChatRoom.DoesNotExist:
+            print(f"ChatRoom with survey_id {self.survey_id} does not exist.")
+            return None
+        except Exception as e:
+            print(f"Error getting chatroom: {e}")
+            return None
+
+    async def save_message(self, chatroom, sender_id, message):
+        """
+        Сохраняет сообщение в базе данных.
+        """
+        try:
+            sender = await User.objects.aget(id=sender_id)
+            await Message.objects.acreate(
+                chatroom=chatroom,
+                sender=sender,
+                content=message
+            )
+        except Exception as e:
+            print(f"Error saving message: {e}")
