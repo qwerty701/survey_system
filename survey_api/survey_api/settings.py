@@ -38,11 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'chats',
-    'notifications',
-    'users',
-    'user_profile',
-    'surveys',
+    'apps.chats.apps.ChatsConfig',
+    'apps.notifications.apps.NotificationsConfig',
+    'apps.users.apps.UsersConfig',
+    'apps.user_profile.apps.UserProfileConfig',
+    'apps.surveys.apps.SurveysConfig',
     
     'rest_framework',
     'rest_framework.authtoken',
@@ -183,7 +183,7 @@ SIMPLE_JWT = {
 }
 
 
-AUTH_PROFILE_MODULE = 'user_profile.Profile'
+AUTH_PROFILE_MODULE = 'apps.user_profile.Profile'
 
 CHANNEL_LAYERS = {
     "default": {

@@ -35,9 +35,6 @@ urlpatterns = [
         path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
         path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     ])),
-    path('api/v1/surveys/', include('surveys.urls')),
-    path('api/v1/user-profile/', include('user_profile.urls')),
-    path('api/v1/chat/', include('chats.urls')),
-    path('api/v1/user/', include('users.urls')),
+    path('api/v1/', include('api.v1.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 ]
