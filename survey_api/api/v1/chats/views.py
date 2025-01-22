@@ -1,13 +1,16 @@
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from apps.chats.models import ChatMessage
-from apps.chats.serializers import ChatMessageSerializer
+from apps.chats.models import Message
 
-class ChatMessagesView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, survey_id):
-        messages = ChatMessage.objects.filter(survey_id=survey_id).order_by("timestamp")
-        serializer = ChatMessageSerializer(messages, many=True)
-        return Response(serializer.data)
+@api_view(['GET'])
+def get_message_history(request, room_id):
+    messages = Message.objects.filter(chatroom_id=room_id).select_related('chatroom', 'sender')
+    data = [
+        {
+            'chatroom': msg.chatroom.id,
+            'sender': msg.sender.username,
+            'content': msg.content,
+            'timestamp': msg.timestamp
+        } for msg in messages
+    ]
+    return Response(data)

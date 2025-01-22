@@ -12,10 +12,13 @@ from apps.notifications.routing import websocket_urlpatterns as notifications_we
 
 websocket_urlpatterns = chat_websocket_urlpatterns + notifications_websocket_urlpatterns
 
+print(websocket_urlpatterns, "asdas")
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
-        URLRouter(websocket_urlpatterns)
+        URLRouter(
+            websocket_urlpatterns
+        )
     ),
 })

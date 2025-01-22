@@ -6,7 +6,7 @@ from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from channels.layers import get_channel_layer
 
-from apps.chats.models import ChatMessage
+from apps.chats.models import ChatRoom, Message
 
 User = get_user_model()
 
@@ -64,13 +64,18 @@ class Survey(models.Model):
     def __str__(self):
         return f'Опрос от {self.authors}, название - {self.title}'
 
+
 @receiver(post_save, sender=Survey)
 def create_chat_for_survey(sender, instance, created, **kwargs):
     if created:
-        ChatMessage.objects.create(
-            survey=instance,
-            user=instance.authors,
-            message="Чат для этого опроса создан!"
+        chatroom = ChatRoom.objects.create(survey=instance)
+
+        chatroom.users.add(instance.authors)
+
+        Message.objects.create(
+            chatroom=chatroom,
+            sender=instance.authors,
+            content='Hello World!'
         )
 
 channel_layer = get_channel_layer()

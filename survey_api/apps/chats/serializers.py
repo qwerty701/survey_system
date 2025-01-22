@@ -1,9 +1,15 @@
 from rest_framework import serializers
-from .models import ChatMessage
+from .models import ChatRoom, Message
 
-class ChatMessageSerializer(serializers.ModelSerializer):
+class ChatSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 
     class Meta:
-        model = ChatMessage
-        fields = ['id', 'user', 'message', 'timestamp']
+        model = ChatRoom
+        fields = ['id', 'users', 'survey']
+
+class MessageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Message
+        fields = ['id', 'chatroom', 'sender', 'content']

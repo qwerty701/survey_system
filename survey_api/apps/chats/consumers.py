@@ -1,39 +1,61 @@
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from .models import ChatMessage
-from .serializers import ChatMessageSerializer
+from channels.exceptions import StopConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
+import json
 
-class ChatConsumer(AsyncJsonWebsocketConsumer):
+class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.survey_id = self.scope["url_route"]["kwargs"]["survey_id"]
-        self.group_name = f"chat_{self.survey_id}"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
-        await self.accept()
+        try:
+            self.survey_id = self.scope['url_route']['kwargs']['survey_id']
+            self.room_group_name = f'chat_{self.survey_id}'
 
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
 
-    async def receive_json(self, content):
-        user = self.scope["user"]
-
-        if user.is_authenticated:
-            message = content.get("message")
-            if message:
-
-                chat_message = ChatMessage.objects.create(
-                    survey_id=self.survey_id, user=user, message=message
-                )
-
-
-                serializer = ChatMessageSerializer(chat_message)
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        "type": "chat_message",
-                        "message": serializer.data,
-                    },
-                )
-        else:
+            await self.accept()
+        except Exception as e:
+            print(f"Error during connection: {e}")
             await self.close()
 
+    async def disconnect(self, close_code):
+        try:
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
+        except Exception as e:
+            print(f"Error during disconnect: {e}")
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            message = data['message']
+            sender_id = data['sender_id']
+
+            chatroom = await self.get_chatroom()
+            if chatroom:
+                await self.save_message(chatroom, sender_id, message)
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'sender_id': sender_id
+                }
+            )
+        except Exception as e:
+            print(f"Error during message receive: {e}")
+            raise StopConsumer()
+
     async def chat_message(self, event):
-        await self.send_json(event["message"])
+        try:
+            message = event['message']
+            sender_id = event['sender_id']
+            await self.send(text_data=json.dumps({
+                'message': message,
+                'sender_id': sender_id
+            }))
+        except Exception as e:
+            print(f"Error during message send: {e}")

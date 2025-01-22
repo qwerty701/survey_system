@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('chats/', include('apps.chats.urls')),
     path('notifications/', include('apps.notifications.urls')),
     path('surveys/', include('apps.surveys.urls')),
