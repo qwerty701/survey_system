@@ -10,54 +10,90 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('surveys', '0001_initial'),
+        ("surveys", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='answer',
-            name='user_voted',
-            field=models.ManyToManyField(blank=True, related_name='voted_answers', to=settings.AUTH_USER_MODEL),
+            model_name="answer",
+            name="user_voted",
+            field=models.ManyToManyField(
+                blank=True, related_name="voted_answers", to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
-            model_name='answer',
-            name='question',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='answer_options', to='surveys.question'),
+            model_name="answer",
+            name="question",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="answer_options",
+                to="surveys.question",
+            ),
         ),
         migrations.AddField(
-            model_name='survey',
-            name='authors',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='authored_surveys', to=settings.AUTH_USER_MODEL),
+            model_name="survey",
+            name="authors",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="authored_surveys",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='survey',
-            name='category',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='category_survey', to='surveys.category'),
+            model_name="survey",
+            name="category",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="category_survey",
+                to="surveys.category",
+            ),
         ),
         migrations.AddField(
-            model_name='question',
-            name='survey',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='questions', to='surveys.survey'),
+            model_name="question",
+            name="survey",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="questions",
+                to="surveys.survey",
+            ),
         ),
         migrations.AddField(
-            model_name='userresponse',
-            name='answer',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='user_responses', to='surveys.answer'),
+            model_name="userresponse",
+            name="answer",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="user_responses",
+                to="surveys.answer",
+            ),
         ),
         migrations.AddField(
-            model_name='userresponse',
-            name='question',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_responses', to='surveys.question'),
+            model_name="userresponse",
+            name="question",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="user_responses",
+                to="surveys.question",
+            ),
         ),
         migrations.AddField(
-            model_name='userresponse',
-            name='survey',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_responses', to='surveys.survey'),
+            model_name="userresponse",
+            name="survey",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="user_responses",
+                to="surveys.survey",
+            ),
         ),
         migrations.AddField(
-            model_name='userresponse',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='responses', to=settings.AUTH_USER_MODEL),
+            model_name="userresponse",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="responses",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

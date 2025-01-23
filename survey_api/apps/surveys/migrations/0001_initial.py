@@ -7,56 +7,113 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Answer',
+            name="Answer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=255)),
-                ('votes', models.PositiveIntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("text", models.CharField(max_length=255)),
+                ("votes", models.PositiveIntegerField(default=0)),
             ],
         ),
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=64, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=64, unique=True)),
             ],
             options={
-                'verbose_name': 'Категория',
-                'verbose_name_plural': 'Категории',
+                "verbose_name": "Категория",
+                "verbose_name_plural": "Категории",
             },
         ),
         migrations.CreateModel(
-            name='Question',
+            name="Question",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.CharField(choices=[('text', 'Текстовый ответ'), ('choice', 'Выбор из вариантов')], default='text', max_length=10)),
-                ('text', models.TextField()),
-                ('is_required', models.BooleanField(default=False, verbose_name='Обязательный вопрос')),
-                ('order', models.PositiveIntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("text", "Текстовый ответ"),
+                            ("choice", "Выбор из вариантов"),
+                        ],
+                        default="text",
+                        max_length=10,
+                    ),
+                ),
+                ("text", models.TextField()),
+                (
+                    "is_required",
+                    models.BooleanField(
+                        default=False, verbose_name="Обязательный вопрос"
+                    ),
+                ),
+                ("order", models.PositiveIntegerField(default=0)),
             ],
         ),
         migrations.CreateModel(
-            name='Survey',
+            name="Survey",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=64)),
-                ('time_start', models.DateTimeField(auto_now_add=True)),
-                ('time_end', models.DateTimeField(verbose_name='Дата и время окончания вопроса')),
-                ('active', models.BooleanField(default=True)),
-                ('description', models.TextField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=64)),
+                ("time_start", models.DateTimeField(auto_now_add=True)),
+                (
+                    "time_end",
+                    models.DateTimeField(verbose_name="Дата и время окончания вопроса"),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("description", models.TextField(blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='UserResponse',
+            name="UserResponse",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text_response', models.TextField(blank=True, null=True)),
-                ('responsed_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("text_response", models.TextField(blank=True, null=True)),
+                ("responsed_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

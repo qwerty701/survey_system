@@ -1,0 +1,31 @@
+[flake8]
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    db.sqlite3,
+    migrations
+
+
+max-line-length = 120
+
+
+ignore =
+    D100,
+    D101,
+    D102,
+    D104,
+    D103,
+    D105,
+    D106,
+    D200,
+    B017,
+    DJ01,
+    DJ10,
+    DJ11
+
+
+extend-select =
+    B,
+    I

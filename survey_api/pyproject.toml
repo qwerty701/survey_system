@@ -1,0 +1,5 @@
+[tool.isort]
+profile = "black"
+known_third_party = "django"
+line_length = 120
+skip = ["migrations", "venv", ".venv"]
