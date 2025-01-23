@@ -7,7 +7,7 @@ from rest_framework import status, filters, viewsets
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.surveys.serializers import *
-from apps.surveys.permissions import IsAuthor
+from apps.surveys.permissions import IsAuthorOrAdmin
 
 from apps.surveys.models import Survey, Question, Answer, UserResponse
 
@@ -99,11 +99,25 @@ class SubmitResponseView(APIView):
 
 
 class ExportResponsesView(APIView):
-    permission_classes = [IsAuthor]
+    permission_classes = [IsAuthorOrAdmin]
+
+    def get_object(self, survey_id):
+        try:
+            return Survey.objects.get(id=survey_id)
+        except Survey.DoesNotExist:
+            return None
 
     def get(self, request, *args, **kwargs):
-        format = request.query_params.get('format', 'csv')
         survey_id = kwargs.get('survey_id')
+        survey = self.get_object(survey_id)
+
+        if not survey:
+            return Response({'error': 'Опрос не найден'}, status=404)
+
+        if not IsAuthorOrAdmin().has_object_permission(request, self, survey):
+            return Response({'error': 'У вас нет прав на экспорт результатов этого опроса'}, status=403)
+
+        format = request.query_params.get('format', 'csv')
 
         responses = UserResponse.objects.filter(survey_id=survey_id).values(
             'user__username',

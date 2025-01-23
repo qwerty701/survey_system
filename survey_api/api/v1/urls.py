@@ -7,4 +7,5 @@ urlpatterns = [
     path('notifications/', include('apps.notifications.urls')),
     path('surveys/', include('apps.surveys.urls')),
     path('user-profile/', include('apps.user_profile.urls')),
+    path('user/', include('apps.users.urls'))
 ]
