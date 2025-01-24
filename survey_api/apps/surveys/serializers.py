@@ -3,7 +3,29 @@ from rest_framework import serializers
 from .models import Answer, Category, Question, Survey, UserResponse
 
 
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ["id", "text", "votes"]
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    answers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = ["id", "text", "type", "is_required", "answers"]
+
+    def get_answers(self, obj):
+        if obj.type == "choice":
+            answers = Answer.objects.filter(question=obj)
+            return AnswerSerializer(answers, many=True).data
+        return None
+
+
 class SurveySerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+
     class Meta:
         model = Survey
         fields = [
@@ -14,13 +36,8 @@ class SurveySerializer(serializers.ModelSerializer):
             "time_end",
             "active",
             "description",
+            "questions",
         ]
-
-
-class QuestionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Question
-        fields = ["id", "text", "type", "is_required", "survey", "order"]
 
 
 class UserResponseSerializer(serializers.ModelSerializer):
@@ -41,9 +58,3 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "title"]
-
-
-class AnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Answer
-        fields = ["id", "question", "text", "votes", "user_voted"]

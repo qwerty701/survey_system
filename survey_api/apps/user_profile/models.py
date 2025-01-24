@@ -10,6 +10,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500)
     birth_date = models.DateField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
 
     def __str__(self):
         return f"Профиль пользователя {self.user}"

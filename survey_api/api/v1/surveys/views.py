@@ -4,23 +4,32 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.surveys.models import Answer, Question, Survey, UserResponse, Category
+from apps.surveys.models import Answer, Category, Question, Survey, UserResponse
 from apps.surveys.permissions import IsAuthorOrAdmin
-from apps.surveys.serializers import (CategorySerializer,
-                                      SurveySerializer,
-                                      QuestionSerializer,
-                                      AnswerSerializer,
-                                      UserResponseSerializer)
+from apps.surveys.serializers import (
+    AnswerSerializer,
+    CategorySerializer,
+    QuestionSerializer,
+    SurveySerializer,
+    UserResponseSerializer,
+)
+from apps.users.permissions import IsOwner
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsOwner(), IsAuthorOrAdmin()]
+        else:
+            return [AllowAny()]
 
 
 class SurveyViewSet(viewsets.ModelViewSet):
@@ -34,10 +43,22 @@ class SurveyViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(authors=self.request.user)
 
+    def get_permissions(self):
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsAuthorOrAdmin()]
+        else:
+            return [AllowAny()]
+
 
 class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
+
+    def get_permissions(self):
+        if self.action in ["update", "partial_update", "destroy", "create"]:
+            return [IsAuthenticated(), IsAuthorOrAdmin()]
+        else:
+            return [AllowAny()]
 
 
 class AnswerViewSet(viewsets.ModelViewSet):

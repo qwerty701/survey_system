@@ -36,10 +36,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = data["message"]
             sender_id = data["sender_id"]
 
-            # Получаем объект ChatRoom
             chatroom = await self.get_chatroom()
             if chatroom:
-                # Сохраняем сообщение в базе данных
                 await self.save_message(chatroom, sender_id, message)
 
             await self.channel_layer.group_send(

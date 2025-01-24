@@ -14,17 +14,6 @@ class NotificationListView(APIView):
             "-created_at"
         )
         serializer = NotificationSerializer(notifications, many=True)
+        notifications.update(is_read=True)
+
         return Response(serializer.data)
-
-
-class MarkNotificationReadView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            notification = Notification.objects.get(pk=pk, user=request.user)
-            notification.is_read = True
-            notification.save()
-            return Response({"detail": "Notification marked as read."})
-        except Notification.DoesNotExist:
-            return Response({"detail": "Notification not found."}, status=404)
